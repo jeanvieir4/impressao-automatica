@@ -1,0 +1,19 @@
+# Documentos processados pelo programa (dados de clientes - nunca versionar)
+Entrada/*
+!Entrada/.gitkeep
+Impresso/*
+!Impresso/.gitkeep
+Erro/*
+!Erro/.gitkeep
+Log/*
+!Log/.gitkeep
+
+# Arquivos temporarios do Office
+~$*
+
+# Backup local
+*.bak
+
+# Build outputs (gerados via ps2exe, nao versionados)
+Impressao.exe
+Impressao.exe.config
