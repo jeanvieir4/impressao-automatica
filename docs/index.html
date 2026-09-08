@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Impressao Automatica</title>
+<meta name="description" content="Imprime arquivos automaticamente a partir de uma pasta monitorada, com fila manual e interface grafica. Gratis.">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --paper: #eef2e9;
+    --paper-raised: #f6f8f2;
+    --rule: #c7d3bd;
+    --rule-strong: #9fb090;
+    --ink: #1e2a1f;
+    --ink-soft: #52604f;
+    --ink-faint: #7c8878;
+    --credit: #1f6b46;
+    --credit-bg: #dcebe0;
+    --debit: #a13a2c;
+    --debit-bg: #f3ddd6;
+    --link: #2a5a3d;
+
+    --serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper: #12160f;
+      --paper-raised: #181d14;
+      --rule: #33402c;
+      --rule-strong: #4a5a40;
+      --ink: #e8ede2;
+      --ink-soft: #aab8a0;
+      --ink-faint: #7c8878;
+      --credit: #5cc98d;
+      --credit-bg: #1c3226;
+      --debit: #e2836f;
+      --debit-bg: #3a241d;
+      --link: #7fcf9e;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper: #12160f;
+    --paper-raised: #181d14;
+    --rule: #33402c;
+    --rule-strong: #4a5a40;
+    --ink: #e8ede2;
+    --ink-soft: #aab8a0;
+    --ink-faint: #7c8878;
+    --credit: #5cc98d;
+    --credit-bg: #1c3226;
+    --debit: #e2836f;
+    --debit-bg: #3a241d;
+    --link: #7fcf9e;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+  }
+  h1,h2,h3{
+    font-family: var(--serif);
+    font-weight: 600;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .page{
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--rule-strong);
+    flex-wrap: wrap;
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.6rem;
+  }
+  .masthead h1{
+    font-size: clamp(2rem, 5vw, 2.6rem);
+    margin: 0;
+    line-height: 1.1;
+  }
+  .masthead .tagline{
+    margin: 0.5rem 0 0;
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+    max-width: 34ch;
+  }
+  .contact-block{
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    text-align: right;
+    line-height: 1.7;
+    white-space: nowrap;
+  }
+  .contact-block strong{ color: var(--ink); font-weight: 600; }
+
+  /* ---------- sample queue ---------- */
+  .ledger{
+    margin-top: 2.25rem;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .ledger-label{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule);
+  }
+  .ledger-label .example-flag{
+    color: var(--ink-faint);
+    font-style: italic;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  table.ledger-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.86rem;
+  }
+  table.ledger-table th{
+    text-align: left;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0.55rem 0.9rem;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  table.ledger-table td{
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  table.ledger-table td.hist{ white-space: normal; color: var(--ink-soft); }
+  table.ledger-table tr:last-child td{ border-bottom: none; }
+  .tipo-c, .tipo-d{
+    display: inline-block;
+    font-weight: 600;
+    padding: 0.05rem 0.45rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+  }
+  .tipo-c{ color: var(--credit); background: var(--credit-bg); }
+  .tipo-d{ color: var(--ink-faint); background: var(--paper); }
+
+  /* ---------- sections ---------- */
+  section{
+    margin-top: 2.75rem;
+  }
+  section h2{
+    font-size: 1.3rem;
+    margin: 0 0 0.9rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  section p{ color: var(--ink-soft); margin: 0.6rem 0; max-width: 62ch; }
+  section p strong{ color: var(--ink); }
+
+  /* ---------- download cta ---------- */
+  .download-cta{
+    margin-top: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    border: 1px solid var(--rule-strong);
+    background: var(--paper-raised);
+    border-radius: 4px;
+    padding: 1.1rem 1.3rem;
+  }
+  .download-cta .file-info{
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .download-cta .file-name{
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+  .download-cta .file-meta{
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+  .btn-download{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--credit);
+    color: var(--paper-raised);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 0.7rem 1.3rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
+  }
+  .btn-download:hover{ opacity: 0.88; }
+  .btn-download:focus-visible{ outline: 2px solid var(--link); outline-offset: 2px; }
+
+  .callout{
+    margin-top: 2.75rem;
+    border: 1px solid var(--debit);
+    border-left-width: 4px;
+    background: var(--debit-bg);
+    border-radius: 4px;
+    padding: 1.1rem 1.3rem;
+  }
+  .callout h2{
+    border: none;
+    padding: 0;
+    margin: 0 0 0.5rem;
+    font-size: 1.15rem;
+    color: var(--debit);
+  }
+  .callout p{ color: var(--ink); margin: 0.5rem 0; max-width: 66ch; }
+  .callout ol{ margin: 0.7rem 0 0; padding-left: 1.3rem; color: var(--ink); }
+  .callout li{ margin: 0.3rem 0; }
+
+  /* ---------- steps ---------- */
+  .steps{
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+  }
+  .steps li{
+    counter-increment: step;
+    display: flex;
+    gap: 0.9rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .steps li:last-child{ border-bottom: none; }
+  .steps li::before{
+    content: counter(step);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule-strong);
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps li span{ color: var(--ink-soft); padding-top: 0.1rem; }
+  .steps li span strong{ color: var(--ink); }
+
+  /* ---------- feature chips ---------- */
+  .chips{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+  }
+  .chip{
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--ink);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 0.3rem 0.65rem;
+  }
+  .chip.note{ color: var(--ink-faint); border-style: dashed; }
+
+  /* ---------- apoie o projeto (pix) ---------- */
+  .support-box{
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    border: 1px solid var(--credit);
+    border-left-width: 4px;
+    background: var(--credit-bg);
+    border-radius: 4px;
+    padding: 1.1rem 1.3rem;
+    flex-wrap: wrap;
+  }
+  .support-qr{
+    width: 108px;
+    height: 108px;
+    flex: none;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    padding: 6px;
+  }
+  .support-text{ flex: 1; min-width: 220px; }
+  .support-text p{ color: var(--ink); margin: 0.4rem 0; max-width: 48ch; }
+  .support-key{
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--credit) !important;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--rule-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  footer .signoff{ color: var(--ink-faint); font-size: 0.85rem; max-width: 40ch; }
+  footer .contact-block{ text-align: left; }
+
+  a{ color: var(--link); }
+
+  @media (max-width: 600px){
+    .masthead{ flex-direction: column; align-items: flex-start; }
+    .contact-block{ text-align: left; }
+    table.ledger-table{ font-size: 0.78rem; }
+    table.ledger-table th, table.ledger-table td{ padding: 0.5rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="masthead">
+    <div>
+      <p class="eyebrow">Ferramenta gratuita · código aberto</p>
+      <h1>Impressão Automática</h1>
+      <p class="tagline">Solte os arquivos numa pasta e ele imprime sozinho &mdash; sem abrir cada PDF, sem clicar em Imprimir um por um.</p>
+    </div>
+    <div class="contact-block">
+      <strong>Jean Vieira</strong><br>
+      Contador &amp; desenvolvedor<br>
+      (49) 99907-9884<br>
+      jean.vieira@hotmail.com
+    </div>
+  </div>
+
+  <div class="download-cta">
+    <div class="file-info">
+      <span class="file-name">Impressao_Automatica.zip</span>
+      <span class="file-meta">.exe + LEIA-ME + LICENSE · Windows · <a href="https://github.com/jeanvieir4/impressao-automatica" target="_blank" rel="noopener noreferrer">código-fonte no GitHub</a></span>
+    </div>
+    <a class="btn-download" href="https://github.com/jeanvieir4/impressao-automatica/releases/download/v1.0.0/Impressao_Automatica.zip" target="_blank" rel="noopener noreferrer">Baixar o programa &darr;</a>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-label">
+      <span>Lista de Documentos</span>
+      <span class="example-flag">exemplo da fila</span>
+    </div>
+    <table class="ledger-table">
+      <thead>
+        <tr><th>Arquivo</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="hist">NF_9071_cliente.pdf</td>
+          <td><span class="tipo-c">Impresso</span></td>
+        </tr>
+        <tr>
+          <td class="hist">Contrato_Anual.pdf</td>
+          <td><span class="tipo-c">Impresso</span></td>
+        </tr>
+        <tr>
+          <td class="hist">Balancete_Agosto.xlsx</td>
+          <td><span class="tipo-d">Na fila</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2>O que é</h2>
+    <p>
+      Um programa que fica de olho numa pasta (<strong>Entrada</strong>) e
+      manda pra impressora sozinho qualquer arquivo solto ali &mdash; PDF,
+      Word, Excel, o que for. Também tem uma janela pra imprimir na hora:
+      arraste os arquivos, escolha a impressora, reordene do jeito que
+      quiser e clique em Imprimir. Roda no computador, sem internet e sem
+      custo.
+    </p>
+    <p>
+      Detecta sozinho a impressora e, quando o arquivo é PDF, usa o
+      <strong>Adobe Acrobat</strong> pra imprimir direto, sem abrir diálogo
+      nem pedir clique &mdash; ideal pra imprimir várias notas fiscais,
+      contratos ou até um livro inteiro em lote.
+    </p>
+    <p>
+      Entre um documento e outro, pode imprimir automaticamente uma folha
+      em branco separadora, útil pra organizar pilhas grandes de papel na
+      bandeja de saída.
+    </p>
+  </section>
+
+  <div class="callout">
+    <h2>Antes de abrir: aviso do Windows é normal</h2>
+    <p>
+      Na primeira execução o Windows costuma mostrar uma tela azul
+      <strong>&ldquo;O Windows protegeu o computador&rdquo;</strong> com
+      <strong>&ldquo;Editor desconhecido&rdquo;</strong>, e o antivírus pode
+      soltar um alerta. Isso não é vírus &mdash; é o aviso padrão pra
+      qualquer programa sem certificado de assinatura digital (esse
+      certificado é pago e caro, não compensa numa ferramenta interna
+      gratuita).
+    </p>
+    <p>Pra abrir mesmo assim:</p>
+    <ol>
+      <li>Na tela azul, clique em <strong>&ldquo;Mais informações&rdquo;</strong>.</li>
+      <li>Clique em <strong>&ldquo;Executar assim mesmo&rdquo;</strong>.</li>
+    </ol>
+    <p>Se o antivírus (AVG, Avast, Defender etc.) colocar o arquivo em quarentena, restaure-o e adicione uma exceção.</p>
+  </div>
+
+  <section>
+    <h2>Como usar</h2>
+    <ol class="steps">
+      <li><span><strong>Extraia o zip</strong> baixado e dê dois cliques no <code>Impressao.exe</code>.</span></li>
+      <li><span><strong>Escolha a impressora</strong> no topo da janela.</span></li>
+      <li><span><strong>Automático:</strong> solte os arquivos na pasta <strong>Entrada</strong> (do lado do .exe) &mdash; ele imprime e organiza sozinho.</span></li>
+      <li><span><strong>Manual:</strong> arraste os arquivos pra Lista de Documentos, reordene com as setas e clique em Imprimir.</span></li>
+      <li><span>Acompanhe tudo pelo <strong>Log</strong> da própria janela.</span></li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Requisitos</h2>
+    <div class="chips">
+      <span class="chip">Windows</span>
+      <span class="chip">Impressora instalada</span>
+      <span class="chip">Adobe Acrobat (Reader ou DC)</span>
+      <span class="chip note">sem Acrobat → PDF ainda imprime, mas pode abrir janela</span>
+    </div>
+    <p style="margin-top:0.9rem">
+      Sem o Adobe Acrobat instalado, o programa ainda funciona, mas a
+      impressão de PDF pode abrir o leitor padrão do Windows na tela em vez
+      de imprimir direto &mdash; confira se saiu a impressão mesmo assim.
+    </p>
+  </section>
+
+  <section>
+    <h2>Responsabilidade</h2>
+    <p>
+      Ferramenta oferecida como está, gratuita, sem garantia. Confira
+      sempre se os documentos importantes realmente saíram da impressora
+      antes de descartar o original ou dar uma tarefa por concluída. Quem
+      usa a ferramenta é responsável por essa conferência.
+    </p>
+    <p>
+      Distribuído sob licença MIT: livre pra usar, copiar e repassar,
+      inclusive em outro escritório, sem custo e sem pedir permissão.
+      Termos completos no arquivo <code>LICENSE.txt</code> que vem junto do
+      programa.
+    </p>
+  </section>
+
+  <section>
+    <h2>Apoie o projeto</h2>
+    <div class="support-box">
+      <img class="support-qr" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeoAAAHqAQAAAADjFjCXAAAE6klEQVR4nO1c2Y3jMAylaAPz6QBTwJTidLAlLbak7SAuJR3EnwEccMFDsjPzs0N7EB98H058PPgQQepRlBLBDHQ4hw0QdDfQT2UE3Q30UxlBdwP9VEbQ3UA/lRF0N9BPZQT9yJ8uGWreeSQ91Z0e+Xg+m8593jmv5uHdQD+VEfS5n64lxo3t71SRWtjvaw10kdPNUMyxkitp0bt7gW6mIOiv/nR9dl/t7ZHoIhbWEKVzQwTtDUBsUoww+0RGNJwbeGB6/fVQRRJiCfoTb+qBOj7Q/aKdvTsGfSWfjv6cLOBC9zEAdB/3lH7zLjvBn777N4HfJQR9HZ8OtJdm/TrutN0q82ktDbbhWCvB1S4pjEu0uxvop+6F3okuPQHkzh2bXv9mm/bK4uJWUTqD6VpY0cN7gW6mIOh+0DPEr+mGNYR080y5siWqTywIX+cHHpgOnyKsxdUSazWQcuZE/R/bn8ZaRljdQc0GF9Kwj5q6X/dEpmEfiaC5cyB91CwkuHPHZ/t3SO3tfVjFw2PQt+zrSP1aERIWZgdO0InXk4Pi5oo7pPB1s4AHpoPYXA6kZmtjb856eCJkxeryLkWExZc2HG6ZDmY+7Ncsc2JDEAqRFNON9esgfB2+tOFwB74OmiIashFqqnjUECQeLssMRaiJg5oNLpY5AVWuz2nhy3O+WCxRgnAbVgevbDjcg68DtjCRD2pwIi7kGJ/X0f8xmzKE1cG22x1X0a+D0cwskI6VJgoLuOb/KCIsvrThcA8a9vZJzVqY1X7dxOBCw+6j3XEdamKYjkjYiZxDUfmqamLs61GoicOaDS5BJ7q+Ef3hqqazurmBizd54J94gEKO9TVXtVclfbyWh3cD/VRG0P2gIl9zWrgkTZ5SKtr1k11xgm34OpgFPDC9zn944FXQ11xB/G4VxO3fBFrp1BJXdfZpUm4M2353DPpKNCyMY2Na6ZQHyCZaQ/PFjMgS+4EHptf229y4Wn2oxeElaB58ohrU9XVc6skb6hIfW+zuQYeja1gq2nSsPsl16zlLrJeMhXebfncM+uvHJuBTBXFJleShsjF9N0SEhTDaGSCzpjJbgvE8eWc6GDspBqDwdXOAs9iwC3pTEiQqH+TYwJN3bD42dCkvBWDucD0P7wR6iYqgLxFhSeqGyyBr1rCl3DNXFduGEf06P/DAdBDrmZYMy+h/SRCXSs/J7qQOD1/68Bj0zX86usgEWMW42Mk9pfQhCpenwp4eCdpruW41D+8BulgFQfeDxK8VWZrHvMYiTwuuWdeOqWIKXzcHeGA6jFaXi+fy+L5F02yTeuKJRhFhD2o2uPDc/zZXNdnMnFJkZ12/8RIKqzus2eASI2LJ9qqBoOdFxDJSe62HPAGb//U8AbsZ6j28OwZ9JWt1QvdBvFbnm0lVXklMi0x0SdhSDHBZ8O5eoJspCPoKKtihhNQvM3jyv080in6dHziDC3ukJ06Q5DV1yupiXG6s9e2aNP6pu/8/8BvXBn3Vn66vtaBdXF86Sw5Px8Yk/kote4r162B1DbdBemPTrvMgq6wGKw7vnrKG5R4eT55ghZti5X9cRcNtOHMChlJQXJZ4mqSPy+pOUem0/XbHl9Jr2Y6pErKdgX9kk+s79Xwjv1X062Db7Y5B9wLdTEHQ3UA/lRF0N9BPZQTdDfRTGUF3Y9Of7h9CWk+ZhZBNEQAAAABJRU5ErkJggg==" alt="QR Code Pix">
+      <div class="support-text">
+        <p style="margin-top:0">
+          Se essa ferramenta te ajudou, um apoio via Pix é bem-vindo &mdash;
+          não é obrigatório, o programa continua gratuito de qualquer forma.
+        </p>
+        <p class="support-key">jean.vieira@hotmail.com</p>
+        <p style="margin-bottom:0; font-size:0.85rem">Aponte a câmera do banco pro QR code, ou copie a chave acima.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="contact-block">
+      <strong>Jean Vieira</strong><br>
+      (49) 99907-9884<br>
+      jean.vieira@hotmail.com
+    </div>
+    <p class="signoff">Dúvidas ou sugestão: chama no WhatsApp ou manda por e-mail.</p>
+  </footer>
+
+</div>
+</body>
+</html>
