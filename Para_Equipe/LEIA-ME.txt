@@ -1,0 +1,90 @@
+IMPRESSAO AUTOMATICA
+==================================================================
+Jean Vieira | (49) 99907-9884 | jean.vieira@hotmail.com
+
+Nao precisa instalar nada. So o arquivo Impressao.exe.
+
+AVISO NA PRIMEIRA EXECUCAO (LEIA ANTES DE RODAR)
+--------------------------------------------------
+Na primeira vez que abrir o programa, o Windows provavelmente vai mostrar
+uma tela azul "O Windows protegeu o computador" com "Editor desconhecido",
+e o antivirus pode dar um alerta. Isso NAO significa que e virus: acontece
+porque o programa nao tem um certificado de assinatura digital (esse tipo
+de certificado e pago e caro, e nao compensa pra uma ferramenta interna
+gratuita). E um aviso padrao do Windows pra qualquer .exe de um
+desenvolvedor independente.
+
+Pra rodar mesmo assim:
+1. Na tela azul do SmartScreen, clique em "Mais informacoes".
+2. Clique no botao "Executar assim mesmo" que aparece.
+Se o antivirus (AVG, Avast, Windows Defender etc.) colocar o arquivo em
+quarentena, restaure o arquivo e adicione uma excecao pra ele (ou pra
+pasta inteira onde o programa esta).
+
+REQUISITO IMPORTANTE: ADOBE ACROBAT
+--------------------------------------
+Pra imprimir PDF direto, sem abrir janela nem pedir clique, este programa
+usa o Adobe Acrobat (Reader ou DC) instalado no computador. Se o PC nao
+tiver Acrobat, o programa ainda funciona, mas pode abrir o leitor de PDF
+padrao do Windows na tela em vez de imprimir direto - nesse caso, confira
+se saiu a impressao mesmo assim.
+
+COMO USAR
+---------
+1. Coloque o Impressao.exe numa pasta fixa (ele cria sozinho, do lado
+   dele, as pastas "Entrada", "Impresso", "Erro", "Log" e "Separador" na
+   primeira vez que abrir).
+2. De dois cliques em "Impressao.exe".
+3. Escolha a impressora no topo da janela.
+4. Duas formas de imprimir:
+   a) AUTOMATICO: solte os arquivos dentro da pasta "Entrada" (do lado
+      do .exe). O programa imprime sozinho e move pra "Impresso" (ou
+      "Erro", com um aviso, se nao conseguir depois de 3 tentativas).
+   b) MANUAL: arraste os arquivos ou pastas pra "Lista de Documentos" na
+      janela, use as setas pra colocar na ordem que quiser, e clique em
+      "Imprimir".
+5. Acompanhe tudo em tempo real na caixa de Log da propria janela (tambem
+   fica salvo em Log\impressao.log, pra conferir depois).
+
+CONFIGURACOES
+--------------
+Na propria janela: numero de copias, frente e verso, e liga/desliga da
+folha separadora em branco entre os documentos.
+
+FOLHA SEPARADORA
+------------------
+O programa imprime a folha em branco que estiver em Separador\Branco.pdf
+entre um documento e outro (pode desligar essa opcao na janela). Se essa
+pasta/arquivo nao vier junto no seu zip, so desativa a opcao ou coloque
+qualquer PDF de uma pagina em branco nesse caminho.
+
+PROBLEMAS COMUNS
+-----------------
+- Nao imprimiu nada e nao apareceu erro: confira se a impressora
+  selecionada esta certa e ligada. Olhe o Log da janela pra ver o que
+  aconteceu com aquele arquivo especifico.
+- Aviso do SmartScreen ou do antivirus na primeira execucao: ver secao
+  "AVISO NA PRIMEIRA EXECUCAO" no topo deste arquivo.
+- PDF abrindo numa janela em vez de imprimir direto: instale o Adobe
+  Acrobat (ver secao acima).
+
+AVISO DE RESPONSABILIDADE
+---------------------------
+Ferramenta oferecida "como esta", gratuita, sem garantia. Confira sempre
+se os documentos importantes realmente saíram da impressora antes de
+descartar o original ou dar uma tarefa por concluida. Quem usa a
+ferramenta e responsavel por essa conferencia.
+
+LICENCA
+--------
+Este programa e livre pra usar e repassar pra quem voce quiser, inclusive
+em outro escritorio. Termos completos (licenca MIT) no arquivo
+LICENSE.txt, nesta mesma pasta.
+
+APOIE O DESENVOLVIMENTO
+--------------------------
+Se este programa te ajudou, voce pode apoiar via Pix:
+Chave Pix: jean.vieira@hotmail.com
+
+Duvidas ou sugestao: Jean Vieira
+(49) 99907-9884 - jean.vieira@hotmail.com
