@@ -17,9 +17,22 @@ desenvolvedor independente.
 Pra rodar mesmo assim:
 1. Na tela azul do SmartScreen, clique em "Mais informacoes".
 2. Clique no botao "Executar assim mesmo" que aparece.
-Se o antivirus (AVG, Avast, Windows Defender etc.) colocar o arquivo em
-quarentena, restaure o arquivo e adicione uma excecao pra ele (ou pra
-pasta inteira onde o programa esta).
+
+SE MESMO ASSIM O PROGRAMA NAO ABRIR (erro tipo "acesso negado" ou "o
+Windows nao pode acessar o arquivo especificado"): o antivirus esta
+bloqueando a execucao, mesmo sem colocar em quarentena. Nesse caso e
+preciso adicionar o Impressao.exe (ou a pasta inteira onde ele esta) nas
+EXCECOES/EXCLUSOES do antivirus instalado no computador. O nome do menu
+muda de antivirus pra antivirus, mas em geral fica em
+Configuracoes > Antivirus > Exclusoes (ou Excecoes):
+- Panda Dome: menu (=) > Configuracoes > Antivirus > role ate
+  "Exclusoes" > Adicionar > selecione a pasta do programa.
+- AVG / Avast: Menu > Configuracoes > Geral > Excecoes > Adicionar
+  Excecao > selecione o arquivo ou pasta.
+- Windows Defender: Seguranca do Windows > Protecao contra virus e
+  ameacas > Gerenciar configuracoes > Adicionar ou remover exclusoes.
+Se o antivirus ja tiver colocado o arquivo em quarentena, restaure-o
+primeiro e depois adicione a excecao pra ele nao ser bloqueado de novo.
 
 REQUISITO IMPORTANTE: ADOBE ACROBAT
 --------------------------------------
@@ -63,8 +76,10 @@ PROBLEMAS COMUNS
 - Nao imprimiu nada e nao apareceu erro: confira se a impressora
   selecionada esta certa e ligada. Olhe o Log da janela pra ver o que
   aconteceu com aquele arquivo especifico.
-- Aviso do SmartScreen ou do antivirus na primeira execucao: ver secao
-  "AVISO NA PRIMEIRA EXECUCAO" no topo deste arquivo.
+- Aviso do SmartScreen, antivirus, ou o programa nao abre de jeito
+  nenhum ("acesso negado"): ver secao "AVISO NA PRIMEIRA EXECUCAO" no
+  topo deste arquivo - provavelmente precisa adicionar excecao no
+  antivirus.
 - PDF abrindo numa janela em vez de imprimir direto: instale o Adobe
   Acrobat (ver secao acima).
 
