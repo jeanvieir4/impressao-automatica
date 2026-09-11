@@ -27,9 +27,9 @@ $Copias                = 1      # quantas vezes repetir a impressao de cada arqu
 $UsarSeparador         = $true  # imprime a folha em branco entre um documento e outro
 $ForcarDuplex          = $false # tenta configurar frente-e-verso na impressora antes de imprimir (pode exigir executar como administrador)
 $MaxTentativas         = 3      # tentativas antes de desistir do arquivo e mover para a pasta Erro
-$TimeoutSpoolerSegundos = 150   # tempo maximo esperando a fila de impressao liberar um arquivo grande (livro)
+$TimeoutSpoolerSegundos = 150   # segundos - usado so no caminho generico (Word/Excel/PowerPoint)
 $EsperaSemDeteccaoSegundos = 20    # se o job nunca aparecer na fila (comum em algumas impressoras de rede), segue em frente apos esse tempo - Word/Excel/verbo generico
-$EsperaSemDeteccaoPDFSegundos = 60 # mesma logica, mas para PDF via Acrobat, que demora mais pra abrir/renderizar antes de mandar pra fila, especialmente em documentos com varias paginas
+$TimeoutMaximoPDFSegundos = 1800   # segundos (30 min): teto de seguranca pra PDF via Acrobat. Espera o Acrobat fechar sozinho (sinal real de impressao concluida) ou o job aparecer e sumir da fila; esse teto so evita travar a fila pra sempre em caso anormal - nunca fecha o Acrobat a forca
 $IntervaloVarreduraSegundos = 10 # intervalo entre cada verificacao da pasta Entrada
 
 # --- Preparacao ---
@@ -85,7 +85,10 @@ function Aguardar-Spooler {
 
 function Fechar-ProcessosNovos {
     param([int[]]$PidsAntes)
-    $nomesAlvo = 'AcroRd32', 'Acrobat', 'WINWORD', 'EXCEL', 'POWERPNT'
+    # Acrobat/AcroRd32 propositalmente de fora: PDFs grandes (centenas/milhares de
+    # paginas) podem levar minutos pra imprimir, e fechar o processo a forca
+    # arrisca interromper uma impressao real em andamento. Ver Aguardar-ImpressaoPDF.
+    $nomesAlvo = 'WINWORD', 'EXCEL', 'POWERPNT'
     Start-Sleep -Seconds 1
     $processosAtuais = Get-Process -Name $nomesAlvo -ErrorAction SilentlyContinue
     foreach ($p in $processosAtuais) {
@@ -132,6 +135,58 @@ $AcrobatExe = Obter-AcrobatExecutavel
 if ($AcrobatExe) { Write-Log "PDF: impressao silenciosa via Adobe Acrobat habilitada ($AcrobatExe)" }
 else { Write-Log "AVISO: Adobe Acrobat nao encontrado; PDFs vao usar o verbo de impressao padrao do Windows (pode abrir dialogo)." }
 
+function Aguardar-ImpressaoPDF {
+    param($Processo, [string]$NomeArquivo, [int]$TimeoutMaximoSegundos = 1800)
+    # PDFs grandes (centenas/milhares de paginas) podem levar bastante tempo so pra
+    # abrir e renderizar no Acrobat antes de mandar pra fila - e o processo do
+    # Acrobat NAO fecha sozinho quando termina (testado e confirmado), entao esperar
+    # o processo sumir nao funciona. Em vez disso, monitoramos o uso de CPU do
+    # processo: enquanto ele estiver gastando CPU de verdade, ainda esta trabalhando;
+    # quando ficar ocioso por alguns segundos seguidos, consideramos concluido e so
+    # entao fechamos ESSE processo especifico (nunca antes disso). O job na fila de
+    # impressao (quando a impressora reporta) serve como atalho mais rapido. O teto
+    # so existe pra nao travar a fila pra sempre num caso anormal - nesse caso o
+    # Acrobat fica aberto (nao fechamos as cegas).
+    $baseNome = [System.IO.Path]::GetFileNameWithoutExtension($NomeArquivo)
+    $inicio = Get-Date
+    $jobVisto = $false
+    $esperaMinima = 15
+    $checagensOciosoParaConcluir = 8
+    $checagensOcioso = 0
+    $cpuAnterior = 0
+    while ((New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds -lt $TimeoutMaximoSegundos) {
+        $p = if ($Processo) { Get-Process -Id $Processo.Id -ErrorAction SilentlyContinue } else { $null }
+        if ($Processo -and -not $p) { return }
+
+        try {
+            $jobs = Get-CimInstance -ClassName Win32_PrintJob -ErrorAction Stop |
+                    Where-Object { $_.Document -like "*$baseNome*" }
+            if ($jobs -and $jobs.Count -gt 0) { $jobVisto = $true }
+            elseif ($jobVisto) {
+                if ($p) { try { Stop-Process -Id $p.Id -Force -ErrorAction Stop } catch {} }
+                return
+            }
+        } catch { }
+
+        $decorridos = (New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds
+        if ($p -and $decorridos -ge $esperaMinima) {
+            $cpuAtual = $p.CPU
+            if (($cpuAtual - $cpuAnterior) -lt 0.3) {
+                $checagensOcioso++
+                if ($checagensOcioso -ge $checagensOciosoParaConcluir) {
+                    try { Stop-Process -Id $p.Id -Force -ErrorAction Stop } catch {}
+                    return
+                }
+            } else {
+                $checagensOcioso = 0
+            }
+            $cpuAnterior = $cpuAtual
+        }
+        Start-Sleep -Seconds 2
+    }
+    Write-Log "AVISO: '$NomeArquivo' ainda pode estar imprimindo apos $([int]($TimeoutMaximoSegundos / 60)) minutos de espera; o Acrobat foi deixado aberto para nao interromper uma impressao em andamento - feche manualmente se necessario."
+}
+
 function Imprimir-UmaCopia {
     param([string]$CaminhoArquivo, [string]$NomeParaSpooler)
 
@@ -141,8 +196,8 @@ function Imprimir-UmaCopia {
         $impressoraAlvo = Resolver-ImpressoraAlvo
         if ($impressoraAlvo) {
             $argList = @("/t", $CaminhoArquivo, $impressoraAlvo)
-            Start-Process -FilePath $AcrobatExe -ArgumentList $argList -WindowStyle Minimized -ErrorAction Stop
-            Aguardar-Spooler -NomeArquivo $NomeParaSpooler -TimeoutSegundos $TimeoutSpoolerSegundos -EsperaSemDeteccaoOverride $EsperaSemDeteccaoPDFSegundos
+            $proc = Start-Process -FilePath $AcrobatExe -ArgumentList $argList -WindowStyle Minimized -PassThru -ErrorAction Stop
+            Aguardar-ImpressaoPDF -Processo $proc -NomeArquivo $NomeParaSpooler -TimeoutMaximoSegundos $TimeoutMaximoPDFSegundos
             return
         }
     }
