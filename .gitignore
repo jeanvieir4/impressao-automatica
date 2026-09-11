@@ -1,12 +1,13 @@
 # Documentos processados pelo programa (dados de clientes - nunca versionar)
-Entrada/*
-!Entrada/.gitkeep
-Impresso/*
-!Impresso/.gitkeep
-Erro/*
-!Erro/.gitkeep
-Log/*
-!Log/.gitkeep
+# "**/" cobre tambem copias rodadas de dentro de Para_Equipe ou outra pasta
+**/Entrada/*
+!**/Entrada/.gitkeep
+**/Impresso/*
+!**/Impresso/.gitkeep
+**/Erro/*
+!**/Erro/.gitkeep
+**/Log/*
+!**/Log/.gitkeep
 
 # Arquivos temporarios do Office
 ~$*

@@ -27,8 +27,9 @@ $Copias                = 1      # quantas vezes repetir a impressao de cada arqu
 $UsarSeparador         = $true  # imprime a folha em branco entre um documento e outro
 $ForcarDuplex          = $false # tenta configurar frente-e-verso na impressora antes de imprimir (pode exigir executar como administrador)
 $MaxTentativas         = 3      # tentativas antes de desistir do arquivo e mover para a pasta Erro
-$TimeoutSpoolerSegundos = 90    # tempo maximo esperando a fila de impressao liberar um arquivo grande (livro)
-$EsperaSemDeteccaoSegundos = 20 # se o job nunca aparecer na fila (comum em algumas impressoras de rede), segue em frente apos esse tempo
+$TimeoutSpoolerSegundos = 150   # tempo maximo esperando a fila de impressao liberar um arquivo grande (livro)
+$EsperaSemDeteccaoSegundos = 20    # se o job nunca aparecer na fila (comum em algumas impressoras de rede), segue em frente apos esse tempo - Word/Excel/verbo generico
+$EsperaSemDeteccaoPDFSegundos = 60 # mesma logica, mas para PDF via Acrobat, que demora mais pra abrir/renderizar antes de mandar pra fila, especialmente em documentos com varias paginas
 $IntervaloVarreduraSegundos = 10 # intervalo entre cada verificacao da pasta Entrada
 
 # --- Preparacao ---
@@ -46,14 +47,16 @@ function Write-Log {
 function Aguardar-Spooler {
     param(
         [string]$NomeArquivo,
-        [int]$TimeoutSegundos = 60
+        [int]$TimeoutSegundos = 60,
+        [int]$EsperaSemDeteccaoOverride = -1
     )
+    $espera = if ($EsperaSemDeteccaoOverride -ge 0) { $EsperaSemDeteccaoOverride } else { $EsperaSemDeteccaoSegundos }
     $baseNome = [System.IO.Path]::GetFileNameWithoutExtension($NomeArquivo)
     $inicio = Get-Date
     $jobVisto = $false
     while ((New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds -lt $TimeoutSegundos) {
         $decorridos = (New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds
-        if (-not $jobVisto -and $decorridos -ge $EsperaSemDeteccaoSegundos) {
+        if (-not $jobVisto -and $decorridos -ge $espera) {
             # Em algumas impressoras de rede o job nunca aparece no Win32_PrintJob mesmo imprimindo normalmente.
             # Depois do tempo padrao de processamento, segue em frente em vez de esperar o timeout inteiro.
             return
@@ -139,7 +142,7 @@ function Imprimir-UmaCopia {
         if ($impressoraAlvo) {
             $argList = @("/t", $CaminhoArquivo, $impressoraAlvo)
             Start-Process -FilePath $AcrobatExe -ArgumentList $argList -WindowStyle Minimized -ErrorAction Stop
-            Aguardar-Spooler -NomeArquivo $NomeParaSpooler -TimeoutSegundos $TimeoutSpoolerSegundos
+            Aguardar-Spooler -NomeArquivo $NomeParaSpooler -TimeoutSegundos $TimeoutSpoolerSegundos -EsperaSemDeteccaoOverride $EsperaSemDeteccaoPDFSegundos
             return
         }
     }

@@ -28,8 +28,9 @@ $sync.Copias              = 1
 $sync.UsarSeparador       = $true
 $sync.ForcarDuplex        = $false
 $sync.MaxTentativas       = 3
-$sync.TimeoutSpooler      = 90
-$sync.EsperaSemDeteccao   = 20  # segundos: se o job nunca aparecer na fila (comum em algumas impressoras de rede), segue em frente apos esse tempo
+$sync.TimeoutSpooler      = 150
+$sync.EsperaSemDeteccao   = 20   # segundos: se o job nunca aparecer na fila (comum em algumas impressoras de rede), segue em frente apos esse tempo - usado para Word/Excel/verbo generico
+$sync.EsperaSemDeteccaoPDF = 60  # segundos: mesma logica, mas para PDF via Acrobat, que demora mais pra abrir/renderizar antes de mandar pra fila, especialmente em documentos com varias paginas
 $sync.IntervaloVarredura  = 10
 $sync.AutomacaoAtiva      = $true
 $sync.Encerrar            = $false
@@ -56,13 +57,14 @@ $workerScript = {
     }
 
     function Aguardar-Spooler {
-        param([string]$NomeArquivo, [int]$TimeoutSegundos = 60)
+        param([string]$NomeArquivo, [int]$TimeoutSegundos = 60, [int]$EsperaSemDeteccaoOverride = -1)
+        $espera = if ($EsperaSemDeteccaoOverride -ge 0) { $EsperaSemDeteccaoOverride } else { $sync.EsperaSemDeteccao }
         $baseNome = [System.IO.Path]::GetFileNameWithoutExtension($NomeArquivo)
         $inicio = Get-Date
         $jobVisto = $false
         while ((New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds -lt $TimeoutSegundos) {
             $decorridos = (New-TimeSpan -Start $inicio -End (Get-Date)).TotalSeconds
-            if (-not $jobVisto -and $decorridos -ge $sync.EsperaSemDeteccao) {
+            if (-not $jobVisto -and $decorridos -ge $espera) {
                 # Nesta impressora o job pode nunca aparecer no Win32_PrintJob mesmo imprimindo normalmente.
                 # Depois do tempo padrao de processamento, segue em frente em vez de esperar o timeout inteiro.
                 return
@@ -141,7 +143,7 @@ $workerScript = {
             if ($impressoraAlvo) {
                 $argList = @("/t", $CaminhoArquivo, $impressoraAlvo)
                 Start-Process -FilePath $script:acrobatExe -ArgumentList $argList -WindowStyle Minimized -ErrorAction Stop
-                Aguardar-Spooler -NomeArquivo $NomeParaSpooler -TimeoutSegundos $sync.TimeoutSpooler
+                Aguardar-Spooler -NomeArquivo $NomeParaSpooler -TimeoutSegundos $sync.TimeoutSpooler -EsperaSemDeteccaoOverride $sync.EsperaSemDeteccaoPDF
                 return
             }
         }
